@@ -1,7 +1,6 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-from EDD.Queue import Queue
 
 
 class Graph:
@@ -44,7 +43,7 @@ class Graph:
         costs[source] = 0
 
         if self.visas[self.codes[source]] and not has_visa:
-            return None, float("inf")
+            return [], float("inf")
 
         for _ in range(self.V):
             vertex = self.vertex_min_cost(costs, visited)
@@ -78,7 +77,7 @@ class Graph:
         auxList = [([self.codes[source]], 1, 0)]
 
         if self.visas[self.codes[source]] and not has_visa:
-            return None, 0, float("inf")
+            return [], 0, float("inf")
 
         while len(auxList) > 0:
             auxList.sort(key=lambda x: x[1])
@@ -95,6 +94,9 @@ class Graph:
                     if has_visa or not self.visas[self.codes[neighbor]]:
                         auxList.append(
                             (path + [self.codes[neighbor]], stops + 1, cost + self.adj[current][neighbor]))
+
+        # Si no se encontró una ruta, devuelve valores predeterminados
+        return [], 0, float("inf")
 
     def plot_graph(self):
         G = nx.Graph()
