@@ -43,7 +43,7 @@ class Graph:
         costs = [float("inf")] * self.V
         costs[source] = 0
 
-        if self.visas[self.codes[source]] == True and not has_visa:
+        if self.visas[self.codes[source]] and not has_visa:
             return None, float("inf")
 
         for _ in range(self.V):
@@ -56,7 +56,7 @@ class Graph:
             for neighbor in range(self.V):
                 if self.adj[vertex][neighbor] != float("inf") and not visited[neighbor]:
 
-                    if self.visas[self.codes[neighbor]] == True and not has_visa:
+                    if self.visas[self.codes[neighbor]] and not has_visa:
                         continue
 
                     new_cost = costs[vertex] + self.adj[vertex][neighbor]
@@ -70,36 +70,31 @@ class Graph:
 
         return final_path, final_cost
 
-    def bfs_shortest_path(self, source, dest, has_visa):
-        queue = Queue()
-        queue.enqueue((source, [source], 0))
+# // FIXME - USAR DIJSKTRA PARA MENOR CANTIDAD DE ESCALAS
+    def shortest_path(self, source, end_v, has_visa):
+        previous_Airports = [-1] * self.V
         visited = [False] * self.V
+        # ruta, escalas, costo
+        auxList = [([self.codes[source]], 1, 0)]
 
-        if self.visas[self.codes[source]] == True and not has_visa:
+        if self.visas[self.codes[source]] and not has_visa:
             return None, 0, float("inf")
 
-        while not queue.is_empty():
-            current, path, total_cost = queue.dequeue()
+        while len(auxList) > 0:
+            auxList.sort(key=lambda x: x[1])
+            path, stops, cost = auxList.pop(0)
+            current = self.codes.index(path[-1])
+
+            if current == end_v:
+                return path, stops, cost
+
             visited[current] = True
 
             for neighbor in range(self.V):
                 if self.adj[current][neighbor] != float("inf") and not visited[neighbor]:
-
-                    if self.visas[self.codes[neighbor]] == True and not has_visa:
-                        continue
-
-                    if neighbor == dest:
-                        final_path = path + [neighbor]
-                        final_path_codes = [self.codes[node]
-                                            for node in final_path]
-                        return final_path_codes, len(final_path) - 2, total_cost + self.adj[current][neighbor]
-
-                    queue.enqueue(
-                        (neighbor, path + [neighbor], total_cost + self.adj[current][neighbor]))
-
-                    visited[neighbor] = True
-
-        return None, 0, float("inf")
+                    if has_visa or not self.visas[self.codes[neighbor]]:
+                        auxList.append(
+                            (path + [self.codes[neighbor]], stops + 1, cost + self.adj[current][neighbor]))
 
     def plot_graph(self):
         G = nx.Graph()
@@ -127,9 +122,6 @@ class Graph:
 
         plt.show()
 
-
-# //FIXME - Arreglar bug de plot. Cuando se selecciona CCS y SBH, el nodo destino no se pinta de naranja
-
     def plot_selected_path(self, path):
         G = nx.Graph()
         for i in range(self.V):
@@ -140,45 +132,54 @@ class Graph:
 
         pos = nx.spring_layout(G)
         edge_labels = nx.get_edge_attributes(G, 'weight')
-        node_colors = ['#ff9999' if self.visas[self.codes[i]]
-                       else 'lightblue' for i in range(self.V)]
 
-        origin_node = self.codes.index(path[0])
-        destination_node = self.codes.index(path[-1])
-        node_colors[origin_node] = 'yellow'  # Nodo de origen
-        node_colors[destination_node] = 'orange'  # Nodo de destino
+        nx.draw(G, pos, with_labels=True, labels={node: node for node in G.nodes()}, node_color='lightgray',
+                node_size=500, font_size=10, font_weight='bold')
 
-        nx.draw(G, pos, with_labels=True, labels={node: node for node in G.nodes()},
-                node_color=node_colors, edge_color='lightgrey', node_size=500,
-                font_size=10, font_weight='bold')
-
-        path_edges = [(path[i], path[i + 1]) for i in range(len(path) - 1)]
-        nx.draw_networkx_edges(G, pos, edgelist=path_edges,
-                               edge_color='lightgreen', width=2)
-
+        nx.draw_networkx_edges(G, pos, edgelist=[(
+            path[i], path[i + 1]) for i in range(len(path) - 1)], edge_color='lightgreen', width=2)
         nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10, label_pos=0.2,
                                      bbox=dict(facecolor='white', edgecolor='none', alpha=0.7), verticalalignment='center')
 
-        source_label = "Origen (Requiere Visa)" if self.visas[self.codes[origin_node]
-                                                              ] else "Origen"
-        dest_label = "Destino (Requiere Visa)" if self.visas[
-            self.codes[destination_node]] else "Destino"
+        node_colors = []
 
-        legend_elements = [
-            Line2D([0], [0], marker='o', color='w', label='Requiere Visa',
-                   markerfacecolor='#ff9999', markersize=10),
-            Line2D([0], [0], marker='o', color='w', label='No Requiere Visa',
-                   markerfacecolor='lightblue', markersize=10),
-            Line2D([0], [0], marker='o', color='w', label=source_label,
-                   markerfacecolor='yellow', markersize=10),
-            Line2D([0], [0], marker='o', color='w', label=dest_label,
-                   markerfacecolor='orange', markersize=10),
-            Line2D([0], [0], color='lightgreen',
-                   lw=2, label='Ruta Seleccionada')
-        ]
+        for node in G.nodes():
+            if node in path:
+                if self.visas[node] == True and node != path[0] and node != path[-1]:
+                    node_colors.append('#ff9999')
+
+                elif node == path[0]:
+                    node_colors.append('yellow')
+
+                elif node == path[-1]:
+                    node_colors.append('orange')
+
+                else:
+                    node_colors.append('lightblue')
+
+            else:
+                node_colors.append('lightgray')
+
+        nx.draw_networkx_nodes(G, pos, nodelist=G.nodes(),
+                               node_color=node_colors, node_size=500)
+
+        scr_label = "Origen (Requiere Visa)" if self.visas[path[0]
+                                                           ] == True else "Origen"
+        dest_label = "Destino (Requiere Visa)" if self.visas[path[-1]
+                                                             ] == True else "Destino"
+
+        legend_elements = [Line2D([0], [0], marker='o', color='w', label='Requiere Visa',
+                                  markerfacecolor='#ff9999', markersize=10),
+                           Line2D([0], [0], marker='o', color='w', label='No Requiere Visa',
+                                  markerfacecolor='lightblue', markersize=10),
+                           Line2D([0], [0], color='lightgreen',
+                                  lw=2, label='Ruta Recomendada'),
+                           Line2D([0], [0], marker='o', color='w', label=scr_label,
+                                  markerfacecolor='yellow', markersize=10),
+                           Line2D([0], [0], marker='o', color='w', label=dest_label,
+                                  markerfacecolor='orange', markersize=10)]
 
         plt.legend(handles=legend_elements, loc='best')
-
         plt.show()
 
     def get_airports(self):

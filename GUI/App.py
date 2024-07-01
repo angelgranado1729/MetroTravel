@@ -63,7 +63,7 @@ class App:
                 origin_index, destination_index, has_visa)
             stops = -1
         else:
-            path, stops, total_cost = self.graph.bfs_shortest_path(
+            path, stops, total_cost = self.graph.shortest_path(
                 origin_index, destination_index, has_visa)
 
         if total_cost == float("inf"):
@@ -75,7 +75,7 @@ class App:
                 destination} es: {path}, con un costo de ${total_cost}"
         else:
             message = f"La ruta con menos escalas entre {origin} y {
-                destination} es: {path}, con {stops} escalas y un costo de ${total_cost}"
+                destination} es: {path}, con {stops - 2} escalas y un costo de ${total_cost}"
 
         print(message)
         messagebox.showinfo("Ruta Calculada", message)
