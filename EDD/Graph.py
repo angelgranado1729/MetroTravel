@@ -69,7 +69,6 @@ class Graph:
 
         return final_path, final_cost
 
-# // FIXME - USAR DIJSKTRA PARA MENOR CANTIDAD DE ESCALAS
     def shortest_path(self, source, end_v, has_visa):
         previous_Airports = [-1] * self.V
         visited = [False] * self.V

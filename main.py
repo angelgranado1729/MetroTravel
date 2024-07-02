@@ -7,9 +7,6 @@ def main():
     data = Data()
     graph = Graph(len(data.vertices), data.visas, data.codes)
 
-
-# //TODO - CCS y SBH arregrar bug del plot
-
     for flight in data.flights:
         source = data.vertices[flight[0]]
         dest = data.vertices[flight[1]]
