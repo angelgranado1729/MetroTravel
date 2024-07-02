@@ -1,85 +1,36 @@
-
+import csv
 
 class Data:
-    def __init__(self):
-        self.flights = [
-            ('CCS', 'AUA', 40),
-            ('CCS', 'CUR', 35),
-            ('CCS', 'BON', 60),
-            ('CCS', 'SXM', 300),
-            ('AUA', 'CUR', 15),
-            ('AUA', 'BON', 15),
-            ('CUR', 'BON', 15),
-            ('CCS', 'SDQ', 180),
-            ('SDQ', 'SXM', 50),
-            ('SXM', 'SBH', 45),
-            ('CCS', 'POS', 150),
-            ('POS', 'BGI', 35),
-            ('POS', 'SXM', 90),
-            ('BGI', 'SXM', 70),
-            ('POS', 'PTP', 80),
-            ('POS', 'FDF', 75),
-            ('PTP', 'SXM', 100),
-            ('PTP', 'SBH', 80),
-            ('CUR', 'SXM', 70),
-            ('AUA', 'SXM', 85)
-        ]
+    def __init__(self, flights_file, visas_file, airports_file):
+        self.flights = self.load_flights(flights_file)
+        self.visas = self.load_visas(visas_file)
+        self.airports = self.load_airports(airports_file)
+        self.codes = list(self.airports.keys())
+        self.vertices = {code: index for index, code in enumerate(self.codes)}
 
-        self.visas = {
-            'CCS': False,
-            'AUA': True,
-            'BON': True,
-            'CUR': True,
-            'SXM': True,
-            'SDQ': True,
-            'SBH': False,
-            'POS': False,
-            'BGI': False,
-            'PTP': False,
-            'FDF': False
-        }
+    def load_flights(self, filename):
+        flights = []
+        with open(filename, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                flights.append((row['origin'], row['destination'], int(row['cost'])))
+        return flights
 
-        self.airports = {
-            'CCS': 'Caracas',
-            'AUA': 'Aruba',
-            'BON': 'Bonaire',
-            'CUR': 'Curazao',
-            'SXM': 'Sint Maarten',
-            'SDQ': 'Santo Domingo',
-            'SBH': 'Saint Barth',
-            'POS': 'Port of Spain (Trinidad)',
-            'BGI': 'Bridgetown',
-            'PTP': 'Pointe-a-Pitre (Guadalupe)',
-            'FDF': 'Fort-de-France (Martinique)'
-        }
+    def load_visas(self, filename):
+        visas = {}
+        with open(filename, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                visas[row['airport']] = row['visa_required'].lower() == 'true'
+        return visas
 
-        self.codes = [
-            'CCS',
-            'AUA',
-            'BON',
-            'CUR',
-            'SXM',
-            'SDQ',
-            'SBH',
-            'POS',
-            'BGI',
-            'PTP',
-            'FDF'
-        ]
-
-        self.vertices = {
-            'CCS': 0,
-            'AUA': 1,
-            'BON': 2,
-            'CUR': 3,
-            'SXM': 4,
-            'SDQ': 5,
-            'SBH': 6,
-            'POS': 7,
-            'BGI': 8,
-            'PTP': 9,
-            'FDF': 10
-        }
+    def load_airports(self, filename):
+        airports = {}
+        with open(filename, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                airports[row['code']] = row['name']
+        return airports
 
     def get_flights(self):
         return self.flights
